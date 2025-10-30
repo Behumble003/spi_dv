@@ -1,0 +1,12 @@
+// Instructions on how to send your SPI TB code to me for review
+cd spi_tb_class_p1
+cd sim
+make clean
+cd ..
+zip -r -e spi_tb_class_p1.zip *
+// Enter the password
+cd /home/tresemi_share_folder/fall_2025/student_code
+mkdir Lastname_StudentID
+cd Lastname_StudentID
+cp .../spi_tb_class_p1.zip .
+Email me the password and let me know that you would like for me to look at your code/issues

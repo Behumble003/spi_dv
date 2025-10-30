@@ -1,0 +1,173 @@
+Introduction:
+=============
+  This document provides a guide to constructing a testbench designed to verify the design of a SPI 
+  controller. The process utilizes a Makefile that allows the testbench writer to build the testbench
+  in steps. The testbench is built for the outbound data path only.
+
+The design:
+===========
+  The design performs two functions in parallel: convert parallel data into serial data and convert
+  serial data into parallel data simultaneously.
+  For parallel data to serial data conversion, the controller has 4 Tx registers that can be written
+  to via the APB bus. An additional control register, when written to properly. will initiate the
+  conversion of Tx data into serial data. Serial data is driven onto the MOSI wire at the SPI interfacee.
+  Serial data can be up to 128 bits in length. This is the outbound path.
+  For serial data to parallel data conversion, the MISO data is sampled by the same clock used for MOSI
+  data. The parallel data is stored in Rx registers that can be read via the APB bus.
+  This is the inbound path.
+
+Lab preparation:
+===============
+  A starter framework is given. This framework provides the following.
+    - Review the design spec: spi_v0.7.pdf
+    - Create a verification plan fo cusing on the control register
+    - Directory structure with package files to buid on
+    - An env.sh
+    - A Makefile that allows the students to build in steps.
+    - All interfaces and top level module
+    - The following make commands have been implemented.
+      make spi_if // compile clk_rst_if, apb_if, spi_if
+      make dut    // compile the design
+
+Lab objectives:
+===============
+  - Objective 1: the students implement the remaining testbench components needed for phase 1 for the
+    outbound path.
+  - Objective 2: implement data checking for outbound path.
+  - Objective 3: implement coverage capture using covergroups for outbound path
+
+=============================
+Lab instructions for phase 1:
+=============================
+Step 1: (10 pts) In file tb/tlm/spi_tlm.sv, create a SPI transaction (spi_tlm) class that contains the following.
+  bit [31:0] addr  // APB address (32 bits)
+  bit [31:0] wdata // APB write data (32 bits)
+  bit wr_rd        // command (1 = write, 0 = read)
+  bit do_reset     // (1 = reset, 0 = no action)
+  bit do_wait      // (1 = wait a number of clocks specified in the driver, 0 = no action) 
+  Run make command: make tlm
+
+Step 2: (10 pts) In file tb/cfg/spi_cfg.sv, create a configuration class (spi_cfg) that contains the control bits 
+        in the control register
+  rand bit ass
+  rand bit ie
+  rand bit lsb
+  rand bit txneg
+  rand bit rxneg
+  rand bit char_len (7 bits)
+  Apply the following constraint:
+    ass = 1
+    ie  = 1
+    lsb = 1
+    txneg = 1
+    rxneg = 0
+    char_len = random
+  Declare a 128-bit mask
+    bit [127:0] mask
+  Implement a set_mask function that assigns 1 to char_len bits in mask, 0 to upper bits
+    Example: char_len = 5 ==> mask = 128'h0000_...._0000_001f
+             char_len = 0 ==> mask = 128'hffff_...._ffff_ffff
+  Run make command: make cfg
+
+Step 3: (30 pts) In file tb/agt/master/apb_driver.sv, create a parameterized APB driver (apb_driver)
+        extending from uvm_driver
+  Declare the following:
+    virtual clk_rst_if clk_rst_vif;
+    virtual apb_if apb_vif;
+    spi_cfg spi_cfg_h;
+  In the connect phase, use uvm_config_db::get to retrieve the following.
+      Handle to the clk_rst_if
+      Handle to the apb_if
+      Handle to spi_cfg (configuration object)
+  In the run phase, perform the following.
+    Loop forever at each clock
+      Use seq_item_port.get_next_item(pkt) to retrieve the next packet (debug message)
+      If the packet is a reset packet (do_reset = 1) perform the reset by caling clk_rst_if.do_reset(5)
+      else if the packet is a wait packet (do_wait = 1) call clk_rst_if.do_wait(5)
+      else if the packet is an APB write, perform the write transaction according to APB protocol
+      else if the packet is an APB read, perform the read transaction according to APB protocol
+        ** Note: - use the interface handle to access the signal
+              - for phase 1, we will not implement read transactions
+              - for write transactions, refer the waveforms in spi_v0.7.pdf, section 4.1
+      Create a response packet rsp_pkt
+      Send response packet by calling item_done(rsp_pkt)
+
+Step 4: (5 pts) In file tb/agt/master/apb_agent.sv, create a parameterized APB agent (apb_agent)
+        extending from uvm_agent
+  Declare the following (use typedef for parameterized class):
+    uvm_sequencer sequencer;
+    apb_driver driver
+  In the build phase:
+    Create an instance of the sequencer
+    Create an instance of the driver
+  In the connect phase:
+    Connect the sequencer to the driver (debug message)
+  Run make command: make agt
+
+Step 5: (15 pts) In file tb/agt/master/seq/apb_demo_seq.sv, create a parameterized APB sequence (apb_demo_seq)
+        extending from uvm_sequence
+  Declare the following:
+    spi_cfg spi_cfg_h;
+  In the body task, retrieve a handle to the spi_cfg (configuration object)
+  Randomize the spi_cfg: this will randomize char_len (debug message)
+  Call spi_cfg.set_mask()
+  ** Note: sending a transaction to the sequencer must be followed by a call to get_response(rsp_pkt)
+  Send a reset transaction (debug message)
+  Send a wait transaction (debug message)
+  Send 4 APB write transactions to Tx registers at address 0, 4, 8, 12 (debug message)
+    ** Note: you might want to use data patterns that are easy to recognize for debug such as aaaa...aaaaa
+  Send a transaction to register 16 (control register) with the following (debug message)
+    ctl[13] = spi_cfg.ass
+    ctl[12] = spi_cfg.ie
+    ctl[11] = spi_cfg.lsb
+    ctl[10] = spi_cfg.txneg
+    ctl[ 9] = spi_cfg.rxneg
+    ctl[ 8] = 1 (GO_BSY)
+    ctl[6:0] = spi_cfg.char_len
+    ** Note: this initiates a parallel to serial conversion. The serial bits come out on the MOSI signal at 
+          the SPI interface.
+  Run make command: make seq
+
+Step 6: (5 pts) In file tb/env/spi_env.sv, create a parameterized environment class (spi_env)
+        extending from uvm_env
+  Declare the following:
+    APB agent
+  In the build phase:
+    Create an instance of the APB agent
+  Run make command: make env
+
+Step 7: (10 pts) In file tb/tst/spi_demo_test.sv, create a test class (spi_demo_test)
+        extending from uvm_test
+  Declare the following;
+    The parameterized environment class
+    spi_cfg spi_cfg_h;
+    APB sequence apb_demo_seq
+  In the build phase:
+    Create an instance of the environment class
+    Create an instance of the spi_cfg_h
+    Use uvm_config_db::set to place spi_cfg_h in the resource database
+    Create an instance of apb_demo_seq
+  In the run phase:
+    Raise objection count
+    Start the APB sequence (point to the sequencer defined in APB agent) (debug message)
+    Drop objection count
+  Run make command: make tst
+
+Step 8: (5 pts) perform the following in tb/env/top.sv
+  Import the test package
+  Create instance of clk_rst_if
+  Create instance of apb_if
+  Create instance of spi_if
+  In the initial block:
+    Use uvm_config_db::set to place the clk_rst_if in the resource database
+    Use uvm_config_db::set to place the apb_if in the resource database
+    Use uvm_config_db::set to place the spi_if in the resource database
+
+Step 9: (10 pts) run simulation
+  cd spi_tb_class_p1
+  source env.sh
+  cd sim
+  make compile_spi
+  make run test_name=spi_demo_test
+
+

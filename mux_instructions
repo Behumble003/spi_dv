@@ -1,0 +1,12 @@
+// Instructions on how to send your MUX TB code to me for review
+cd lab_mux_tb
+cd sim
+make clean
+cd ..
+zip -r -e lab_mux_tb.zip *
+// Enter the password
+cd /home/tresemi_share_folder/fall_2025/student_code
+mkdir Lastname_StudentID
+cd Lastname_StudentID
+cp .../lab_mux_tb.zip .
+Email me the password and let me know that you would like for me to look at your code/issues
