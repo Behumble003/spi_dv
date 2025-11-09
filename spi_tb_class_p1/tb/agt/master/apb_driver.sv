@@ -67,6 +67,7 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
     if( !uvm_config_db #(spi_cfg)::get(this,"","TB_CONFIG",spi_cfg_h) ) begin
        `uvm_error(my_name, "Could not retrieve spi_cfg");
     end
+  endfunction
   //
   // RUN phase
   // Retrieve a transaction packet and act on it:
@@ -89,10 +90,10 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
       else if (req_pkt.do_wait) begin
         clk_rst_vif.do_wait(5);
       end
-      else if (req_pkt.is_apb_write) begin
+      else if (req_pkt.wr_rd == 1) begin // FIX: Use 'wr_rd' from spi_tlm, not 'is_apb_write'
         // APB write transaction
-        apb_vif.paddr <= req_pkt.apb_addr;
-        apb_vif.pwdata <= req_pkt.apb_wdata;
+        apb_vif.PADDR <= req_pkt.addr[4:0]; // FIX: Use 'addr' and 'wdata' from spi_tlm. Drive PADDR.
+        apb_vif.PWDATA <= req_pkt.wdata;    // FIX: Drive PWDATA.
         apb_vif.pwrite <= 1;
         apb_vif.psel   <= 1;
         apb_vif.penable<= 0;
@@ -105,7 +106,8 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
       //
       // Create response packet and send it back
       //
-      rsp_pkt = rsp_pkt::type_id::create("rsp_pkt");
+      rsp_pkt = REQ::type_id::create("rsp_pkt"); // FIX: Use REQ type for response packet
+      rsp_pkt.copy(req_pkt); // Good practice to copy request to response
       seq_item_port.item_done(rsp_pkt);
     end
   endtask
