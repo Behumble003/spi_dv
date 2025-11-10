@@ -33,7 +33,7 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
 
   virtual interface clk_rst_if clk_rst_vif;
   virtual interface apb_if apb_vif;
-  spi_cfg spi_cfg_h;
+  // spi_cfg spi_cfg_h;
 
 
   //
@@ -61,12 +61,12 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
     if( !uvm_config_db #(virtual apb_if)::get(this,"","APB_VIF",apb_vif) ) begin
        `uvm_error(my_name, "Could not retrieve virtual apb_if");
     end
-    //
-    // Getting the configuration object handle via get_config_object call
-    //
-    if( !uvm_config_db #(spi_cfg)::get(this,"","TB_CONFIG",spi_cfg_h) ) begin
-       `uvm_error(my_name, "Could not retrieve spi_cfg");
-    end
+    // //
+    // // Getting the configuration object handle via get_config_object call
+    // //
+    // if( !uvm_config_db #(spi_cfg)::get(this,"","TB_CONFIG",spi_cfg_h) ) begin
+    //    `uvm_error(my_name, "Could not retrieve spi_cfg");
+    // end
   endfunction
   //
   // RUN phase
@@ -90,23 +90,23 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
       else if (req_pkt.do_wait) begin
         clk_rst_vif.do_wait(5);
       end
-      else if (req_pkt.wr_rd == 1) begin // FIX: Use 'wr_rd' from spi_tlm, not 'is_apb_write'
+      else if (req_pkt.wr_rd == 1) begin 
         // APB write transaction
-        apb_vif.PADDR <= req_pkt.addr[4:0]; // FIX: Use 'addr' and 'wdata' from spi_tlm. Drive PADDR.
-        apb_vif.PWDATA <= req_pkt.wdata;    // FIX: Drive PWDATA.
+        apb_vif.PADDR <= req_pkt.addr[4:0]; 
+        apb_vif.PWDATA <= req_pkt.wdata;    
         apb_vif.pwrite <= 1;
         apb_vif.psel   <= 1;
         apb_vif.penable<= 0;
-        @(posedge apb_vif.clk);
+        @(posedge apb_vif.clk); //wait for one cycle and done setup
         apb_vif.penable<= 1;
-        @(posedge apb_vif.clk);
+        @(posedge apb_vif.clk); 
         apb_vif.psel   <= 0;
         apb_vif.penable<= 0;
       end
       //
-      // Create response packet and send it back
+      // Create response packet and send it back to the sequencer
       //
-      rsp_pkt = REQ::type_id::create("rsp_pkt"); // FIX: Use REQ type for response packet
+      rsp_pkt = REQ::type_id::create("rsp_pkt")
       rsp_pkt.copy(req_pkt); // Good practice to copy request to response
       seq_item_port.item_done(rsp_pkt);
     end

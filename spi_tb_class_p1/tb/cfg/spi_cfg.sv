@@ -42,7 +42,7 @@ class spi_cfg extends uvm_object;
       mask = '1; // All 1s for 128 bits
     end else begin
       mask = '0;
-      mask = (128'b1 << char_len) - 1;
+      mask = (128'b1 << char_len) - 1; //subtract 1 means inverse the bits
     end
   endfunction
 
