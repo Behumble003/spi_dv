@@ -46,14 +46,15 @@ class apb_demo_seq #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item)
 
     // 1. Send a reset transaction
     `uvm_info(get_type_name(), "Sending reset transaction...", UVM_LOW)
-    req_pkt = REQ::type_id::create("req_pkt");
+    req_pkt = REQ::type_id::create("req_pkt_reset");
     start_item(req_pkt);
-    assert(req_pkt.randomize() with {do_reset == 1;});
+    assert(req_pkt.randomize() with {do_reset == 1;}); //randomize() ensures other fields are randomized
     finish_item(req_pkt);
     get_response(rsp_pkt);
 
     // 2. Send a wait transaction
     `uvm_info(get_type_name(), "Sending wait transaction...", UVM_LOW)
+    req_pkt = REQ::type_id::create("req_pkt_wait");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {do_wait == 1;});
     finish_item(req_pkt);
@@ -61,21 +62,25 @@ class apb_demo_seq #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item)
 
     // 3. Send 4 APB write transactions to Tx registers
     `uvm_info(get_type_name(), "Sending APB writes to Tx registers...", UVM_LOW)
+    req_pkt = REQ::type_id::create("req_pkt_tx0");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h00; wdata == 32'haaaaaaaa;});
     finish_item(req_pkt);
     get_response(rsp_pkt);
 
+    req_pkt = REQ::type_id::create("req_pkt_tx1");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h04; wdata == 32'hbbbbbbbb;});
     finish_item(req_pkt);
     get_response(rsp_pkt);
 
+    req_pkt = REQ::type_id::create("req_pkt_tx2");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h08; wdata == 32'hcccccccc;});
     finish_item(req_pkt);
     get_response(rsp_pkt);
 
+    req_pkt = REQ::type_id::create("req_pkt_tx3");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h0c; wdata == 32'hdddddddd;});
     finish_item(req_pkt);
@@ -83,6 +88,7 @@ class apb_demo_seq #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item)
 
     // 4. Send a transaction to the control register to start the transfer
     `uvm_info(get_type_name(), "Sending APB write to control register...", UVM_LOW)
+    req_pkt = REQ::type_id::create("req_pkt_ctrl");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {
       wr_rd == 1;
