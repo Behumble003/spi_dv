@@ -106,7 +106,7 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
       //
       // Create response packet and send it back to the sequencer
       //
-      rsp_pkt = REQ::type_id::create("rsp_pkt")
+      rsp_pkt = REQ::type_id::create("rsp_pkt");
       rsp_pkt.copy(req_pkt); // Good practice to copy request to response
       seq_item_port.item_done(rsp_pkt);
     end
