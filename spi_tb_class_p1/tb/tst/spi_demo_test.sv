@@ -14,7 +14,8 @@ class spi_demo_test extends uvm_test;
   spi_env_t       spi_env_h;
 
 	spi_cfg         spi_cfg_h;
-  apb_demo_seq#(spi_tlm, spi_tlm) apb_demo_seq_h;
+  typedef apb_demo_seq#(spi_tlm, spi_tlm) apb_demo_seq_t;
+  apb_demo_seq_t  apb_demo_seq_h;
   //
   // NEW
   //
@@ -36,7 +37,7 @@ class spi_demo_test extends uvm_test;
     // Set the configuration object in the uvm_config_db
     uvm_config_db #(spi_cfg)::set(this, "spi_env_h.apb_agent_h.sequencer", "TB_CONFIG", spi_cfg_h);
 
-    apb_demo_seq_h = apb_demo_seq#(spi_tlm, spi_tlm)::type_id::create("apb_demo_seq_h", this);
+    apb_demo_seq_h = apb_demo_seq_t::type_id::create("apb_demo_seq_h", this);
   endfunction
   //
   // RUN phase
