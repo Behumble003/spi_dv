@@ -73,14 +73,17 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
   // Retrieve a transaction packet and act on it:
   //
   virtual task run_phase(uvm_phase phase);
-    forever @(posedge apb_vif.clk) begin  
+    forever begin 
+
       REQ req_pkt;
       RSP rsp_pkt;
+      seq_item_port.get_next_item(req_pkt);
+    @(posedge apb_vif.clk)   
+
       //
       // seq_item_port object is part of the uvm_driver class
       // get_next_item method is part of the interface api between uvm_driver and uvm_sequencer
       //
-      seq_item_port.get_next_item(req_pkt);
       //
       // Check the type of packet and act on it
       //
@@ -94,20 +97,22 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
         // APB write transaction
         apb_vif.PADDR <= req_pkt.addr[4:0]; 
         apb_vif.PWDATA <= req_pkt.wdata;    
-        apb_vif.pwrite <= 1;
-        apb_vif.psel   <= 1;
-        apb_vif.penable<= 0;
+        apb_vif.PWRITE <= 1;
+        apb_vif.PSEL   <= 1;
+        apb_vif.PENABLE <= 0;
         @(posedge apb_vif.clk); //wait for one cycle and done setup
-        apb_vif.penable<= 1;
-        @(posedge apb_vif.clk); 
-        apb_vif.psel   <= 0;
-        apb_vif.penable<= 0;
+        apb_vif.PENABLE<= 1; // Wait for PREADY before finishing
+        @(posedge apb_vif.clk iff apb_vif.PREADY);
+        apb_vif.PSEL   <= 0;
+        apb_vif.PENABLE<= 0;
       end
       //
       // Create response packet and send it back to the sequencer
       //
-      rsp_pkt = REQ::type_id::create("rsp_pkt");
-      rsp_pkt.copy(req_pkt); // Good practice to copy request to response
+      // The copy method does not copy the sequence_id and transaction_id.
+      // We must clone the request packet to create the response.
+      $cast(rsp_pkt, req_pkt.clone()); // clone() or do_copy() can be used here
+      rsp_pkt.set_id_info(req_pkt); // Copies sequence_id and transaction_id
       seq_item_port.item_done(rsp_pkt);
     end
   endtask

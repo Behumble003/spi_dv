@@ -78,13 +78,13 @@ class apb_demo_seq #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item)
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h08; wdata == 32'hcccccccc;});
     finish_item(req_pkt);
-    get_response(rsp_pkt);
+
 
     req_pkt = REQ::type_id::create("req_pkt_tx3");
     start_item(req_pkt);
     assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h0c; wdata == 32'hdddddddd;});
     finish_item(req_pkt);
-    get_response(rsp_pkt);
+
 
     // 4. Send a transaction to the control register to start the transfer
     `uvm_info(get_type_name(), "Sending APB write to control register...", UVM_LOW)

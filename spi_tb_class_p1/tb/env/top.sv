@@ -16,7 +16,7 @@ import spi_test_pkg::*;
   wire clk;
   wire rst;
    
-  //
+  //  
   // Create interface instances here
   //
   clk_rst_if clk_rst_if0(.clk(clk),.rst(rst));
