@@ -73,20 +73,21 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
   // Retrieve a transaction packet and act on it:
   //
   virtual task run_phase(uvm_phase phase);
-    forever begin 
+    REQ req_pkt;
+    RSP rsp_pkt;
 
-      REQ req_pkt;
-      RSP rsp_pkt;
+    // Initialize signals to safe values
+    apb_vif.PSEL    <= 0;
+    apb_vif.PENABLE <= 0;
+    apb_vif.PWRITE  <= 0;
+
+    forever begin
+      // 1. Get the transaction (Blocks here until Sequence sends one)
       seq_item_port.get_next_item(req_pkt);
-    @(posedge apb_vif.clk)   
 
-      //
-      // seq_item_port object is part of the uvm_driver class
-      // get_next_item method is part of the interface api between uvm_driver and uvm_sequencer
-      //
-      //
-      // Check the type of packet and act on it
-      //
+      // 2. Synchronize to the clock edge to start driving
+      @(posedge apb_vif.clk);
+
       if (req_pkt.do_reset) begin
         clk_rst_vif.do_reset(5);
       end
@@ -94,25 +95,32 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
         clk_rst_vif.do_wait(5);
       end
       else if (req_pkt.wr_rd == 1) begin 
-        // APB write transaction
-        apb_vif.PADDR <= req_pkt.addr[4:0]; 
-        apb_vif.PWDATA <= req_pkt.wdata;    
-        apb_vif.PWRITE <= 1;
-        apb_vif.PSEL   <= 1;
+        // --- APB WRITE TRANSACTION ---
+        // Setup Phase
+        apb_vif.PADDR   <= req_pkt.addr[4:0];
+        apb_vif.PWDATA  <= req_pkt.wdata;    
+        apb_vif.PWRITE  <= 1;
+        apb_vif.PSEL    <= 1;
         apb_vif.PENABLE <= 0;
-        @(posedge apb_vif.clk); //wait for one cycle and done setup
-        apb_vif.PENABLE<= 1; // Wait for PREADY before finishing
+
+        // Move to Access Phase (1 clock cycle later)
+        @(posedge apb_vif.clk);
+        apb_vif.PENABLE <= 1;
+
+        // Wait for Slave Ready (PREADY == 1)
         @(posedge apb_vif.clk iff apb_vif.PREADY);
-        apb_vif.PSEL   <= 0;
-        apb_vif.PENABLE<= 0;
+
+        // --- CRITICAL FIX IS HERE ---
+        // De-assert signals IMMEDIATELY after PREADY is detected.
+        // Do NOT wait for another clock cycle.
+        apb_vif.PSEL    <= 0;
+        apb_vif.PENABLE <= 0;
+        apb_vif.PWRITE  <= 0;
       end
-      //
-      // Create response packet and send it back to the sequencer
-      //
-      // The copy method does not copy the sequence_id and transaction_id.
-      // We must clone the request packet to create the response.
-      $cast(rsp_pkt, req_pkt.clone()); // clone() or do_copy() can be used here
-      rsp_pkt.set_id_info(req_pkt); // Copies sequence_id and transaction_id
+      
+      // 3. Send response back to Sequence
+      $cast(rsp_pkt, req_pkt.clone());
+      rsp_pkt.set_id_info(req_pkt);
       seq_item_port.item_done(rsp_pkt);
     end
   endtask
