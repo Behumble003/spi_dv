@@ -64,7 +64,7 @@ class apb_demo_seq #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item)
     `uvm_info(get_type_name(), "Sending APB writes to Tx registers...", UVM_LOW)
     req_pkt = REQ::type_id::create("req_pkt_tx0");
     start_item(req_pkt);
-    assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h00; wdata == 32'haaaaaaaa;do_reset == 0; do_wait == 0;});
+    assert(req_pkt.randomize() with {wr_rd == 1; addr == 32'h00; wdata == 32'h00000004;do_reset == 0; do_wait == 0;});
     finish_item(req_pkt);
     get_response(rsp_pkt);
 
