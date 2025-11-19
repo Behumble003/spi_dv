@@ -40,10 +40,12 @@ class spi_demo_test extends uvm_test;
     apb_demo_seq_h = apb_demo_seq_t::type_id::create("apb_demo_seq_h", this);
   endfunction
   //
-  // RUN phase
+  // RUN phase  
   //
 	task run_phase(uvm_phase phase);
 
+    //we could set the drain time here to control the end of the simulation
+    uvm_test_done.set_drain_time(this, 20us);
     phase.raise_objection(this,"Objection raised by spi_demo_test");
     apb_demo_seq_h.start(spi_env_h.apb_agent_h.sequencer);
     phase.drop_objection(this,"Objection dropped by spi_demo_test");
