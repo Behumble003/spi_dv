@@ -29,18 +29,28 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
 
   `uvm_component_param_utils(apb_driver #(REQ,RSP))
 
+  //declare a ref port name
+  uvm_analysis_port #(spi_tlm) ref_ob_ap;
+
   string   my_name;
 
   virtual interface clk_rst_if clk_rst_vif;
   virtual interface apb_if apb_vif;
-  // spi_cfg spi_cfg_h;
 
+  // spi_cfg spi_cfg_h;
+  
 
   //
   // NEW
   //
   function new(string name, uvm_component parent);
      super.new(name,parent);
+  endfunction
+  
+  //build phase
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    ref_ob_ap = new("ref_ob_ap", this); //create a instance of analysis port
   endfunction
   
   //
@@ -122,6 +132,10 @@ class apb_driver #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) e
       $cast(rsp_pkt, req_pkt.clone());
       rsp_pkt.set_id_info(req_pkt);
       seq_item_port.item_done(rsp_pkt);
+
+      // 4. Perform a write to the analysis port
+      ref_ob_ap.write( req_pkt );
+
     end
   endtask
 

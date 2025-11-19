@@ -11,6 +11,7 @@ class spi_tlm extends uvm_sequence_item;
   rand bit        wr_rd;   // command (1 = write, 0 = read)
   rand bit        do_reset;// (1 = reset, 0 = no action)
   rand bit        do_wait; // (1 = wait a number of clocks specified in the driver, 0 = no action)
+  rand bit [127:0] mosi;    // Data to be sent via SPI (up to 128 bits)
 
  `uvm_object_utils(spi_tlm)
  

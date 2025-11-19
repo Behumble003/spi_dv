@@ -15,6 +15,9 @@ class apb_agent #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) ex
    sequencer_t   sequencer;
    driver_t       driver;
    
+   //declare a ref port name
+   uvm_analysis_port #(spi_tlm) ref_ob_ap;
+
 
    //
    // NEW
@@ -40,6 +43,8 @@ class apb_agent #(type REQ = uvm_sequence_item, type RSP = uvm_sequence_item) ex
    function void connect_phase(uvm_phase phase);
       super.connect_phase(phase);
       driver.seq_item_port.connect(sequencer.seq_item_export);
+      //connect the analysis port of the agent to the analysis port of the driver
+      driver.ref_ob_ap.connect( ref_ob_ap );
    endfunction
 
 endclass

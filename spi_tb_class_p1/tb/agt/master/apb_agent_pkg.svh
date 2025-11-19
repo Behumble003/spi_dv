@@ -7,6 +7,7 @@ package apb_agent_pkg;
    
    import uvm_pkg::*;
    import spi_cfg_pkg::*;
+   import spi_tlm_pkg::*;
    
    `include "uvm_macros.svh"
    `include "apb_driver.sv"
