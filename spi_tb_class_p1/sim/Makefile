@@ -68,12 +68,12 @@ ENV_DIR = $(TB_DIR)/env
 TST_DIR = $(TB_DIR)/tst
 
 ifeq (${tool},DEFAULT)
-compile_spi: spi_if dut tlm cfg seq agt env tst top vopt
+compile_spi: spi_if dut tlm cfg seq agt chk env tst top vopt
 else
-compile_spi: spi_if dut tlm cfg seq agt env tst top 
+compile_spi: spi_if dut tlm cfg seq agt chk env tst top
 endif
 
-ifeq (${tool},DEFAULT)
+ifeq (${tool},DEFAULT)s
 top:
 		${VLOG_CMD} -sv $(ENV_DIR)/top.sv
 else
@@ -96,7 +96,9 @@ seq:
 	${VLOG_CMD} +incdir+$(AGT_MASTER)/seq +incdir+$(ENV_DIR) $(AGT_MASTER)/seq/apb_seq_pkg.svh
 agt:
 	${VLOG_CMD} +incdir+$(AGT_MASTER) +incdir+$(ENV_DIR) $(AGT_MASTER)/apb_agent_pkg.svh
+	${VLOG_CMD} +incdir+$(AGT_SLAVE) +incdir+$(ENV_DIR) $(AGT_SLAVE)/spi_slave_agent_pkg.svh
 chk:
+        ${VLOG_CMD} +incdir+$(CHK_DIR) $(CHK_DIR)/spi_chk_pkg.svh
 cov:
 env:
 	${VLOG_CMD} +incdir+$(ENV_DIR) $(ENV_DIR)/spi_env_pkg.svh

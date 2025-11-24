@@ -242,7 +242,6 @@ Step 7: In file tb/chk/sb.sv, create a scoreboard class sb extending from uvm_sc
         address 1: [63:32]
         address 2: [95:64]
         address 3: [127:96]
-  
   //When a packet arrives at the ref_ob_imp, this function is called
   Implement the function write_ref_ob_imp(REQ pkt)
     if (cnt == 0)
@@ -275,7 +274,7 @@ Step 9: in spi_env, add the following
   Declare a spi_slave_agent
   Declare a scoreboard
   In the build phase
-    Create an instance of spi_slave_monitor
+    Create an instance of spi_slave_agent
     Create an instance of scoreboard
   In the connect phase
     Connect the apb_agent ref_ob_ap to scoreboard ref_ob_imp

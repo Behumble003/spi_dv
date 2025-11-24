@@ -19,7 +19,7 @@ interface clk_rst_if (output logic clk, output logic rst);
   // Task to wait a num number of clocks
   //
 	task do_wait(integer num);
-		repeat (num) @(posedge clk);
+		repeat (num) @(posedge clk)
 	endtask
 	
   //
